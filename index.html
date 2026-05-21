@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>訂正作業（教師進階版）</title>
+<style>
+body { font-family: "Noto Sans TC", sans-serif; background:#eef5fb; margin:0; }
+header{ position:sticky; top:0; background:white; box-shadow:0 2px 8px rgba(0,0,0,.08); padding:10px 16px; z-index:10; }
+h1{ margin:0; font-size:22px; }
+.toolbar{ display:flex; flex-wrap:wrap; gap:8px; margin-top:8px; }
+button{ padding:6px 10px; border:none; border-radius:8px; cursor:pointer; background:#1976d2; color:white; }
+button.secondary{ background:#607d8b; }
+button.warn{ background:#e53935; }
+.container{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; padding:16px; }
+.card{ background:white; border-radius:14px; padding:10px; box-shadow:0 4px 10px rgba(0,0,0,.08); }
+.titleRow{ display:flex; gap:6px; align-items:center; }
+select,input{ padding:4px; border-radius:6px; }
+.warning{ color:#e53935; font-size:12px; }
+.stats{ font-size:12px; margin-top:4px; }
+.students{ display:grid; grid-template-columns:repeat(4,1fr); gap:6px; margin-top:6px; }
+.student{ padding:8px; border-radius:8px; color:white; cursor:pointer; text-align:center; font-weight:bold; }
+.green{ background:#43a047; }
+.red{ background:#e53935; }
+.big .student{ padding:14px; font-size:18px; }
+.big h1{ font-size:32px; }
+.hidden{ display:none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>訂正作業（教師進階版）</h1>
+  <div class="toolbar">
+    <button onclick="resetAll()">全部重設</button>
+    <button onclick="saveData()">儲存紀錄</button>
+    <button onclick="loadData()" class="secondary">讀取紀錄</button>
+    <button onclick="toggleBig()" class="secondary">投影模式</button>
+    <button onclick="exportImage()">匯出截圖</button>
+  </div>
+</header>
+
+<div class="container" id="container"></div>
+
+<script>
+const homeworkOptions=["國習","國練","生字","圈詞","心智圖","聽寫","國卷","數習","數作","數卷","數課","數10格","社習","社作","唐詩","成語","四健會","回條"];
+
+let cardsData = Array(6).fill(null).map(()=>({ selected:"", students:Array(16).fill(true) }));
+
+function createCard(index){
+  const card=document.createElement("div"); card.className="card";
+
+  const titleRow=document.createElement("div"); titleRow.className="titleRow";
+
+  const select=document.createElement("select");
+  select.innerHTML="<option value=''>選擇作業</option>" + homeworkOptions.map(h=>`<option>${h}</option>`).join("");
+
+  const input=document.createElement("input"); input.placeholder="自訂";
+
+  const warning=document.createElement("div"); warning.className="warning";
+  const stats=document.createElement("div"); stats.className="stats";
+
+  select.onchange=()=>updateSelection(index,select.value,warning);
+  input.onchange=()=>updateSelection(index,input.value,warning);
+
+  titleRow.appendChild(select);
+  titleRow.appendChild(input);
+
+  const studentsDiv=document.createElement("div"); studentsDiv.className="students";
+
+  for(let i=0;i<16;i++){
+    let s=document.createElement("div");
+    s.className="student green";
+    s.innerText=String(i+1).padStart(2,'0');
+
+    s.onclick=()=>{
+      cardsData[index].students[i]=!cardsData[index].students[i];
+      s.classList.toggle("green");
+      s.classList.toggle("red");
+      updateStats(index,stats);
+    };
+
+    studentsDiv.appendChild(s);
+  }
+
+  card.appendChild(titleRow);
+  card.appendChild(warning);
+  card.appendChild(stats);
+  card.appendChild(studentsDiv);
+
+  return card;
+}
+
+function updateSelection(index,value,warning){
+  cardsData[index].selected=value;
+  let duplicates=cardsData.filter((c,i)=>c.selected===value && i!==index);
+  warning.innerText=(value && duplicates.length>0)?"⚠️ 重複作業":"";
+}
+
+function updateStats(index,statsEl){
+  let arr=cardsData[index].students;
+  let remain=arr.filter(v=>!v).length;
+  statsEl.innerText = remain===0 ? "✔ 全部完成" : `尚有 ${remain} 人未訂正`;
+}
+
+function resetAll(){
+  if(!confirm("確定全部清空？")) return;
+  cardsData.forEach(c=>{ c.selected=""; c.students.fill(true); });
+  document.getElementById("container").innerHTML="";
+  init();
+}
+
+function saveData(){
+  localStorage.setItem("hwData",JSON.stringify(cardsData));
+  alert("已儲存！");
+}
+
+function loadData(){
+  let data=localStorage.getItem("hwData");
+  if(!data) return alert("沒有紀錄");
+  cardsData=JSON.parse(data);
+  document.getElementById("container").innerHTML="";
+  init();
+}
+
+function toggleBig(){
+  document.body.classList.toggle("big");
+}
+
+function exportImage(){
+  alert("請用截圖（手機或電腦）即可快速分享給家長");
+}
+
+function init(){
+  const container=document.getElementById("container");
+  for(let i=0;i<6;i++){
+    let card=createCard(i);
+    container.appendChild(card);
+  }
+}
+
+init();
+</script>
+
+</body>
+</html>
