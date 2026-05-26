@@ -106,20 +106,37 @@ function resetAll(){
   if(!confirm("確定全部清空？")) return;
   cardsData.forEach(c=>{ c.selected=""; c.students.fill(true); });
   document.getElementById("container").innerHTML="";
-  init();
+  // 開啟網頁自動讀取資料
+loadData();
+init();
 }
 
 function saveData(){
-  localStorage.setItem("hwData",JSON.stringify(cardsData));
-  alert("已儲存！");
+  try{
+    localStorage.setItem("hwData", JSON.stringify(cardsData));
+    alert("✅ 已成功儲存！");
+  }catch(e){
+    alert("❌ 儲存失敗，可能是瀏覽器限制");
+  }
 }
 
 function loadData(){
-  let data=localStorage.getItem("hwData");
-  if(!data) return alert("沒有紀錄");
-  cardsData=JSON.parse(data);
-  document.getElementById("container").innerHTML="";
-  init();
+  try{
+    let data = localStorage.getItem("hwData");
+    if(!data){
+      console.log("沒有舊資料");
+      return;
+    }
+
+    cardsData = JSON.parse(data);
+
+    // 重新渲染畫面
+    document.getElementById("container").innerHTML = "";
+    init();
+
+  }catch(e){
+    alert("❌ 讀取失敗");
+  }
 }
 
 function toggleBig(){
@@ -131,10 +148,30 @@ function exportImage(){
 }
 
 function init(){
+  // 初始化時同步畫面資料
+
   const container=document.getElementById("container");
   for(let i=0;i<6;i++){
     let card=createCard(i);
     container.appendChild(card);
+
+    // 如果有資料，套用狀態
+    if(cardsData[i]){
+      const cardEl = container.children[i];
+      const students = cardEl.querySelectorAll('.student');
+
+      cardsData[i].students.forEach((val,idx)=>{
+        if(!val){
+          students[idx].classList.remove('green');
+          students[idx].classList.add('red');
+        }
+      });
+
+      const select = cardEl.querySelector('select');
+      if(cardsData[i].selected){
+        select.value = cardsData[i].selected;
+      }
+    }
   }
 }
 
